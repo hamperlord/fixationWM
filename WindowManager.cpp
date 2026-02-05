@@ -31,7 +31,8 @@ int main() {
             xcb_window_t window = xcb_generate_id(connection);
             xcb_create_window(connection, XCB_COPY_FROM_PARENT, window, screen->root, 0, 0, 
                               500, 500, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, 
-                              0, NULL);
+                              0, SubstructureRedirectMask);
+            xcb_map_window(connection, window)
         }
     }
     
