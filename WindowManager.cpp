@@ -20,7 +20,6 @@ int main() {
     }
 
     xcb_map_request_event_t* map_request;
-
     xcb_generic_event_t *event;
     while ((event = xcb_poll_for_event(connection))) {
         switch (event->response_type & ~0x80)
