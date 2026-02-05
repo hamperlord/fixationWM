@@ -1,9 +1,2 @@
 #include <xcb/xcb.h>
-#include <xcb/xproto.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <unistd.h>
