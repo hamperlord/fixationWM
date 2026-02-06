@@ -1,11 +1,10 @@
 #include "WindowManager.hpp"
 
 xcb_connection_t *dpy;
-xcb_screen_t *screen;
 xcb_generic_event_t *event;
+xcb_screen_t *screen;
 
-void setup() {
-
+void connect() {
     int scr_num;
     dpy = xcb_connect(NULL, &scr_num);
     const xcb_setup_t *setup = xcb_get_setup (dpy);
@@ -14,10 +13,7 @@ void setup() {
     if (xcb_connection_has_error(dpy)) {
         exit(1); 
         printf("Connection Failed.");
-    }
-    else {
-        printf("Connection running.");
-    };
+    } else printf("Connection running.");
 
     // FROM XCB DOCS
 
@@ -26,7 +22,12 @@ void setup() {
         xcb_screen_next (&iter);
     }
 
-    *screen = iter.data;
+    screen = iter.data;
+}
+
+void setup() {
+
+    connect();
 
     /* report */
 
@@ -50,10 +51,10 @@ void setup() {
     xcb_font_t cfont = xcb_generate_id(dpy);
     xcb_open_font(dpy, cfont, strlen("cursor"), "cursor");
     xcb_create_glyph_cursor(dpy, cursor, cfont, cfont, 58, 58 + 1, 0, 0, 0, 0, 0, 0);
-    xcb_change_window_attributes(dpy, screen->root, XCB_CW_CURSOR, cursor);
 }
 
 int main() {
+
     setup();
 
     // main event loop
@@ -64,7 +65,7 @@ int main() {
 
         switch (event->response_type & ~0x80)
         {
-        case XCB_MAP_NOTIFY: {
+        case XCB_MAP_REQUEST: {
             //im too lazy rn
             break; }
         case XCB_MOTION_NOTIFY: {
