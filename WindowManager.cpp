@@ -50,6 +50,7 @@ void setup() {
     xcb_font_t cfont = xcb_generate_id(dpy);
     xcb_open_font(dpy, cfont, strlen("cursor"), "cursor");
     xcb_create_glyph_cursor(dpy, cursor, cfont, cfont, 58, 58 + 1, 0, 0, 0, 0, 0, 0);
+    xcb_change_window_attributes(dpy, screen->root, XCB_CW_CURSOR, cursor);
 }
 
 int main() {
@@ -73,7 +74,6 @@ int main() {
             free(pointerReply);
             break; }
         default: {
-            printf("No event.");
             break; }
         }
 
