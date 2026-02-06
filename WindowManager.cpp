@@ -26,7 +26,7 @@ void setup() {
         xcb_screen_next (&iter);
     }
 
-    xcb_screen_t *screen = iter.data;
+    *screen = iter.data;
 
     /* report */
 
