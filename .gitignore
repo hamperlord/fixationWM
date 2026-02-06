@@ -1,3 +1,4 @@
 WindowManager
 ittywm annotated.cpp
 .gitignore
+.vscode/c_cpp_properties.json

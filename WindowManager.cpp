@@ -11,8 +11,8 @@ void connect() {
     xcb_screen_iterator_t iter = xcb_setup_roots_iterator (setup);
 
     if (xcb_connection_has_error(dpy)) {
-        exit(1); 
         printf("Connection Failed.");
+        exit(1); 
     } else printf("Connection running.");
 
     // FROM XCB DOCS
@@ -26,6 +26,15 @@ void connect() {
 }
 
 void setup() {
+
+    uint32_t values[] = {
+        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
+        XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY   |
+        XCB_EVENT_MASK_POINTER_MOTION        |
+        XCB_EVENT_MASK_BUTTON_PRESS
+    };
+
+    xcb_change_window_attributes(dpy, screen->root, XCB_CW_EVENT_MASK, values);
 
     connect();
 
@@ -48,9 +57,13 @@ void setup() {
     // Create mouse cursor
 
     xcb_cursor_t cursor = xcb_generate_id(dpy);
+    xcb_cursor_t *pCursor = &cursor;
     xcb_font_t cfont = xcb_generate_id(dpy);
     xcb_open_font(dpy, cfont, strlen("cursor"), "cursor");
     xcb_create_glyph_cursor(dpy, cursor, cfont, cfont, 58, 58 + 1, 0, 0, 0, 0, 0, 0);
+    xcb_change_window_attributes(dpy, screen->root, XCB_CW_CURSOR, pCursor);
+
+    xcb_flush(dpy);
 }
 
 int main() {
