@@ -72,7 +72,7 @@ int main() {
 
     // main event loop
     for (;;) {
-        xcb_flush(dpy);
+
 
         event = xcb_wait_for_event(dpy);
 
@@ -80,12 +80,14 @@ int main() {
         {
         case XCB_MAP_REQUEST: {
             //im too lazy rn
+                xcb_flush(dpy);
             break; }
         case XCB_MOTION_NOTIFY: {
-            xcb_query_pointer_cookie_t pointerCookie = xcb_query_pointer(dpy, screen->root);
-            xcb_query_pointer_reply_t *pointerReply = xcb_query_pointer_reply(dpy, pointerCookie, nullptr);
-            std::cout << "X: " << pointerReply->root_x << "\nY: " << pointerReply->root_y << "\n";
-            free(pointerReply);
+                xcb_query_pointer_cookie_t pointerCookie = xcb_query_pointer(dpy, screen->root);
+                xcb_query_pointer_reply_t *pointerReply = xcb_query_pointer_reply(dpy, pointerCookie, nullptr);
+                std::cout << "X: " << pointerReply->root_x << "\nY: " << pointerReply->root_y << "\n";
+                free(pointerReply);
+                xcb_flush(dpy);
             break; }
         default: {
             break; }
