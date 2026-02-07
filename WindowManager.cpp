@@ -26,7 +26,7 @@ void connect() {
 }
 
 void setup() {
-
+    connect();
     uint32_t values[] = {
         XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
         XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY   |
@@ -35,8 +35,6 @@ void setup() {
     };
 
     xcb_change_window_attributes(dpy, screen->root, XCB_CW_EVENT_MASK, values);
-
-    connect();
 
     /* report */
 
@@ -60,7 +58,7 @@ void setup() {
     xcb_cursor_t *pCursor = &cursor;
     xcb_font_t cfont = xcb_generate_id(dpy);
     xcb_open_font(dpy, cfont, strlen("cursor"), "cursor");
-    xcb_create_glyph_cursor(dpy, cursor, cfont, cfont, 58, 58 + 1, 0, 0, 0, 0, 0, 0);
+    xcb_create_glyph_cursor(dpy, cursor, cfont, cfont, 58, 58 + 1, 16777215, 16777215, 16777215, 0, 0, 0);
     xcb_change_window_attributes(dpy, screen->root, XCB_CW_CURSOR, pCursor);
 
     xcb_flush(dpy);
@@ -79,7 +77,7 @@ int main() {
         switch (event->response_type & ~0x80)
         {
         case XCB_MAP_REQUEST: {
-            //im too lazy rn
+                xcb_map_window(dpy, ((xcb_map_request_event_t*)event)->window);
                 xcb_flush(dpy);
             break; }
         case XCB_MOTION_NOTIFY: {
