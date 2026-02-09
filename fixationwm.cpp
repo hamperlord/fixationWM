@@ -4,26 +4,58 @@ xcb_connection_t *dpy;
 xcb_generic_event_t *event;
 xcb_screen_t *screen;
 
-void grabMouse();
-void grabKeyboard();
-void grabInput();
+xcb_button_mask_t mouseLeft = XCB_BUTTON_MASK_1;
+xcb_button_mask_t mouseMiddle = XCB_BUTTON_MASK_2;
+xcb_button_mask_t mouseRight = XCB_BUTTON_MASK_3;
+
+xcb_event_mask_t mouseMovement = XCB_EVENT_MASK_POINTER_MOTION;
+xcb_event_mask_t mouseLeftMovement = XCB_EVENT_MASK_BUTTON_1_MOTION;
+xcb_event_mask_t mouseMiddleMovement = XCB_EVENT_MASK_BUTTON_2_MOTION;
+xcb_event_mask_t mouseRightMovement = XCB_EVENT_MASK_BUTTON_3_MOTION;
+xcb_event_mask_t mouseButton = XCB_EVENT_MASK_BUTTON_PRESS;
+xcb_event_mask_t mouseRelease = XCB_EVENT_MASK_BUTTON_RELEASE;
+
+void grabMouse(xcb_connection_t *connection, xcb_window_t window);
+void grabKeyboard(xcb_connection_t *connection, xcb_window_t window);
+void grabInput(xcb_connection_t *connection, xcb_enter_notify_event_t *enterevent);
 void mapWindow(xcb_connection_t *connection, xcb_map_request_event_t *mapevent);
+void raiseWindow(xcb_connection_t *connection, xcb_window_t window);
 
 void setup()
 {
-    int screen_num;
-    dpy = xcb_connect(NULL, &screen_num);
+    int scr_num;
+    dpy = xcb_connect(NULL, &scr_num);
+    const xcb_setup_t *setup = xcb_get_setup(dpy);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+
     if (xcb_connection_has_error(dpy))
+    {
+        printf("fixation failed.\n");
         exit(1);
+    }
     else
-        printf("fixation connected to display.\n");
+        printf("fixation running.\n");
 
-    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(xcb_get_setup(dpy));
+    // For loop from xcb docs because I honestly don't know what this means
 
-    for (int i = 0; i < screen_num; i++)
+    // "we want the screen at index screenNum of the iterator" - (aformentioned xcb documentation)
+    // whatever that even means
+    for (int i = 0; i < scr_num; ++i)
+    {
         xcb_screen_next(&iter);
+    }
 
     screen = iter.data;
+
+    uint32_t values[] = {
+        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
+        XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
+        XCB_EVENT_MASK_POINTER_MOTION |
+        XCB_EVENT_MASK_BUTTON_PRESS};
+
+    xcb_change_window_attributes(dpy, screen->root, XCB_CW_EVENT_MASK, values);
+
+    xcb_flush(dpy);
 }
 
 void shutdown();
@@ -31,24 +63,56 @@ void shutdown();
 int main(int argc, char *argv[])
 {
     setup();
-    shutdown();
 
-    for (;;)
+    while (1)
     {
         event = xcb_wait_for_event(dpy);
+        printf("event: %d\n", event->response_type & ~0x80);
         switch (event->response_type & ~0x80)
         {
-        case XCB_MAP_NOTIFY:
+        case XCB_MAP_REQUEST:
+        {
             mapWindow(dpy, ((xcb_map_request_event_t *)event));
-            break;
-        default:
+            xcb_flush(dpy);
+            printf("window mapped");
             break;
         }
+        case XCB_ENTER_NOTIFY:
+        {
+            printf("some window entered");
+            xcb_window_t win = ((xcb_enter_notify_event_t *)event)->child;
+            if (win != XCB_NONE)
+            {
+                // grabInput(dpy, (xcb_enter_notify_event_t *)event);
+                printf("focus change\n");
+                raiseWindow(dpy, win);
+                xcb_flush(dpy);
+            }
+            break;
+        }
+        case XCB_BUTTON_PRESS:
+        {
+
+            break;
+        }
+        case XCB_KEY_PRESS:
+        {
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+        free(event);
     }
+
+    shutdown();
 }
 
 void shutdown()
 {
+    xcb_flush(dpy);
     xcb_disconnect(dpy);
     if (xcb_connection_has_error(dpy))
         printf("fixation shut down.\n");
@@ -56,22 +120,41 @@ void shutdown()
 
 void mapWindow(xcb_connection_t *connection, xcb_map_request_event_t *mapevent)
 {
-    const uint32_t value_masks[] = {};
-    const uint32_t value_list[] = {};
-    xcb_change_window_attributes(connection, mapevent->window, *value_masks, value_list);
+    const uint32_t value_masks[] = {
+        XCB_EVENT_MASK_ENTER_WINDOW |
+        XCB_EVENT_MASK_POINTER_MOTION |
+        XCB_EVENT_MASK_BUTTON_PRESS |
+        XCB_EVENT_MASK_KEY_PRESS};
+    xcb_change_window_attributes(connection, mapevent->window, XCB_CW_EVENT_MASK, value_masks);
     xcb_map_window(connection, mapevent->window);
+    xcb_flush(dpy);
 }
 
-void grabMouse()
+void raiseWindow(xcb_connection_t *connection, xcb_window_t window)
 {
+    const uint32_t values[] = {XCB_STACK_MODE_ABOVE};
+    xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_STACK_MODE, values);
+    xcb_set_input_focus(connection, XCB_INPUT_FOCUS_PARENT, window, XCB_CURRENT_TIME);
+    xcb_flush(dpy);
+    printf("raiseWindow ran.");
 }
 
-void grabKeyboard()
+void grabMouse(xcb_connection_t *connection, xcb_window_t window)
 {
+    xcb_grab_pointer(connection, 1, window, mouseButton | mouseRelease | mouseMovement, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_CURRENT_TIME);
+    xcb_flush(dpy);
 }
 
-void grabInput()
+void grabKeyboard(xcb_connection_t *connection, xcb_window_t window)
 {
-    grabMouse();
-    grabKeyboard();
+    xcb_grab_keyboard(connection, 1, window, XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+    xcb_flush(dpy);
+}
+
+void grabInput(xcb_connection_t *connection, xcb_enter_notify_event_t *enterevent)
+{
+    grabMouse(connection, enterevent->child);
+    grabKeyboard(connection, enterevent->child);
+    xcb_flush(dpy);
+    printf("grabInput ran.");
 }
