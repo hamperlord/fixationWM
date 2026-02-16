@@ -12,6 +12,8 @@ xcb_generic_event_t *event;
 
 void handlemouse(xcb_button_press_event_t *event);
 
+// testing bullshit
+
 void setup() {
   int screennum;
   dpy = xcb_connect(NULL, &screennum);
