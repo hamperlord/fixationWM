@@ -4,8 +4,6 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-#define MOD XCB_MOD_MASK_4
-
 xcb_connection_t *dpy;
 xcb_screen_t *screen;
 xcb_generic_event_t *event;
@@ -14,8 +12,7 @@ void handlemouse(xcb_button_press_event_t *event);
 
 // testing bullshit
 
-void setup()
-{
+void setup() {
   int screennum;
   dpy = xcb_connect(NULL, &screennum);
   if (xcb_connection_has_error(dpy))
@@ -37,19 +34,15 @@ void setup()
                                &eventmask);
 }
 
-int main()
-{
+int main() {
   setup();
 
-  for (;;)
-  {
+  for (;;) {
     xcb_flush(dpy);
 
     event = xcb_wait_for_event(dpy);
-    switch (event->response_type & ~0x80)
-    {
-    case XCB_MAP_REQUEST:
-    {
+    switch (event->response_type & ~0x80) {
+    case XCB_MAP_REQUEST: {
 
       xcb_window_t map_request = ((xcb_map_request_event_t *)event)->window;
       xcb_map_window(dpy, map_request);
@@ -68,37 +61,30 @@ int main()
   return 0;
 }
 
-void handlemouse(xcb_button_press_event_t *event)
-{
+void handlemouse(xcb_button_press_event_t *event) {
   xcb_get_geometry_reply_t *geom;
   geom = xcb_get_geometry_reply(dpy, xcb_get_geometry(dpy, event->child), NULL);
   if (!geom)
     return;
 
-  if (event->detail == 1)
-  {
+  if (event->detail == 1) {
     xcb_window_t window = event->child;
     xcb_grab_pointer(dpy, 0, screen->root,
                      XCB_EVENT_MASK_POINTER_MOTION |
                          XCB_EVENT_MASK_BUTTON_RELEASE,
                      XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
                      XCB_NONE, XCB_CURRENT_TIME);
-  }
-  else
-  {
+  } else {
     // nothing for now
   }
 
   int done = 0;
-  while (!done)
-  {
+  while (!done) {
     xcb_flush(dpy);
     xcb_generic_event_t *event = xcb_wait_for_event(dpy);
 
-    switch (event->response_type & ~0x80)
-    {
-    case XCB_MOTION_NOTIFY:
-    {
+    switch (event->response_type & ~0x80) {
+    case XCB_MOTION_NOTIFY: {
       xcb_motion_notify_event_t *motion = ((xcb_motion_notify_event_t *)event);
       int oldx, oldy;
       oldx = motion->root_x;
@@ -109,8 +95,7 @@ void handlemouse(xcb_button_press_event_t *event)
       break;
       free(event);
     }
-    case XCB_BUTTON_RELEASE:
-    {
+    case XCB_BUTTON_RELEASE: {
       done = 1;
       break;
     }
